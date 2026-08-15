@@ -1,0 +1,14 @@
+name: pingjack
+
+services:
+  # The verification boundary. `docker compose run --rm verify` is the one documented command, and
+  # GitHub Actions runs exactly the same thing.
+  verify:
+    build: .
+    image: pingjack:dev
+    # No network at all. Any outbound access from the applications, the probe, or the tests fails
+    # loudly instead of passing unnoticed.
+    network_mode: none
+    volumes:
+      - .:/workspace
+    command: ["bash", "scripts/verify.sh"]

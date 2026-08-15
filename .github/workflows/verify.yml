@@ -1,0 +1,16 @@
+name: verify
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # The same command the project documents for local use. There is no separate CI toolchain.
+      - name: Run the containerized verification boundary
+        run: docker compose run --rm verify
