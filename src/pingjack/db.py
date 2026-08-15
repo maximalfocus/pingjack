@@ -8,13 +8,27 @@ from __future__ import annotations
 
 from sqlalchemy import Engine, create_engine
 from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.pool import StaticPool
 
 from pingjack.models import Base
 
 
+def _is_memory(url: str) -> bool:
+    return url in {"sqlite://", "sqlite:///:memory:"}
+
+
 def create_database(url: str) -> Engine:
-    """Create an engine for ``url`` and ensure the schema exists."""
-    engine = create_engine(url)
+    """Create an engine for ``url`` and ensure the schema exists.
+
+    Requests are served from a thread pool, so connections must be shareable across threads. An
+    in-memory database additionally needs a single pooled connection, or each thread would silently
+    get a database of its own.
+    """
+    engine = create_engine(
+        url,
+        connect_args={"check_same_thread": False},
+        **({"poolclass": StaticPool} if _is_memory(url) else {}),
+    )
     Base.metadata.create_all(engine)
     return engine
 
