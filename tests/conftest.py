@@ -11,6 +11,8 @@ import pytest
 from fastapi.testclient import TestClient
 
 from pingjack.apps.secure import run_secure_check
+from pingjack.apps.vulnerable import create as create_vulnerable
+from pingjack.gating import ACKNOWLEDGEMENT_ENV, ACKNOWLEDGEMENT_VALUE
 from pingjack.service import create_app
 
 ALPHA_TOKEN = "demo-token-alpha-not-a-real-secret"  # noqa: S105 - fictional demo credential
@@ -35,3 +37,12 @@ def secure_client() -> Iterator[TestClient]:
     )
     with TestClient(app) as client:
         yield client
+
+
+@pytest.fixture
+def vulnerable_client() -> Iterator[TestClient]:
+    # Built through the real factory, so the opt-in gate is exercised rather than bypassed.
+    with pytest.MonkeyPatch.context() as patch:
+        patch.setenv(ACKNOWLEDGEMENT_ENV, ACKNOWLEDGEMENT_VALUE)
+        with TestClient(create_vulnerable()) as client:
+            yield client

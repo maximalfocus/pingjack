@@ -50,11 +50,14 @@ class RejectionClass(StrEnum):
 class Invocation:
     """Exactly what an application handed to the operating system."""
 
-    kind: Literal["argv"]
+    kind: Literal["argv", "shell"]
     argv: tuple[str, ...] = ()
+    command: str = ""
 
     def rendered(self) -> str:
         """Return a readable rendering of the invocation."""
+        if self.kind == "shell":
+            return f"/bin/sh -c {shlex.quote(self.command)}"
         return " ".join(shlex.quote(argument) for argument in self.argv)
 
 
@@ -87,6 +90,34 @@ def run_argv(argv: tuple[str, ...]) -> CompletedCheck:
     try:
         completed = subprocess.run(  # noqa: S603 - fixed executable, argument vector, no shell
             argv,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            check=False,
+            timeout=PROBE_TIMEOUT_SECONDS,
+        )
+    except subprocess.TimeoutExpired:
+        return CompletedCheck(
+            output="probe timed out\n", exit_status=TIMEOUT_EXIT_STATUS, invocation=invocation
+        )
+    return CompletedCheck(
+        output=completed.stdout, exit_status=completed.returncode, invocation=invocation
+    )
+
+
+def run_shell(command: str) -> CompletedCheck:
+    """Run ``command`` by asking a shell to interpret the string.
+
+    Deliberately unsafe, and used only by the intentionally vulnerable application. The shell parses
+    the entire string, so anything inside it that looks like shell syntax - ``;``, ``&&``, ``|``,
+    ``$(...)``, backticks - becomes shell syntax rather than data. This is the flaw the project
+    exists to demonstrate; never write this.
+    """
+    invocation = Invocation(kind="shell", command=command)
+    try:
+        completed = subprocess.run(  # noqa: S602 - the demonstrated vulnerability, by design
+            command,
+            shell=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,

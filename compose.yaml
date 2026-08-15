@@ -12,6 +12,28 @@ services:
     # reachable; the container's own network is not exposed anywhere else.
     command: ["uvicorn", "pingjack.apps.secure:app", "--host", "0.0.0.0", "--port", "8000"]
 
+  # Intentionally vulnerable. Starting it takes two deliberate actions: this profile, and the
+  # acknowledgement variable. Without the acknowledgement the application refuses to start and says
+  # so, even when the profile is enabled.
+  #
+  #   ALLOW_VULNERABLE_DEMO=true docker compose --profile vulnerable up
+  vulnerable:
+    build: .
+    image: pingjack:dev
+    profiles: ["vulnerable"]
+    environment:
+      ALLOW_VULNERABLE_DEMO: ${ALLOW_VULNERABLE_DEMO:-}
+    ports:
+      - "127.0.0.1:8001:8001"
+    command:
+      - uvicorn
+      - pingjack.apps.vulnerable:create
+      - --factory
+      - --host
+      - "0.0.0.0"
+      - --port
+      - "8001"
+
   # The verification boundary. `docker compose run --rm verify` is the one documented command, and
   # GitHub Actions runs exactly the same thing. Its profile keeps it out of `docker compose up`.
   verify:
