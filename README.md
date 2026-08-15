@@ -7,6 +7,15 @@ around a fictional fleet link check API.
 > "sensitive" fixture - is invented. The demonstration runs only inside its own disposable
 > container, performs no network access, and is not intended to run anywhere else.
 
+## Start here
+
+**[WALKTHROUGH.md](WALKTHROUGH.md)** is the guided tour: the vocabulary, shell strings versus
+argument vectors, all four demonstrated outcomes with the output you should expect, why denylisting
+metacharacters is the weaker control, and things to try yourself. It assumes no prior knowledge of
+command injection and no reading of this repository's source.
+
+The rest of this file is the short version.
+
 ## Requirements
 
 Docker Compose. Nothing else: Python, the project dependencies, `uv`, pytest, Ruff, and mypy all
@@ -171,5 +180,4 @@ input closes this, which is what the secure service on port `8000` does.
 
 - The **comparison CLI** (`pingjack-demo`), the one-shot disposable demo container, and the
   security regression matrix covering all three services.
-
-The educational walkthrough arrives in the slice that follows.
+- The **walkthrough** in [WALKTHROUGH.md](WALKTHROUGH.md).
