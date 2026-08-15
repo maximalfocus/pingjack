@@ -192,7 +192,9 @@ def test_no_public_document_promises_support_or_production_readiness(document: s
 def test_no_public_document_references_private_companion_material(document: str) -> None:
     flowed = flowing(PUBLIC_DOCUMENTS[document])
 
-    for term in ("pingjack-prd", "prd.md", "progress.md", "/users/", "private repository"):
+    # Deliberately generic: naming the companion here would make this guard the disclosure it
+    # exists to prevent, and the bare term catches any reference to a requirements document.
+    for term in ("prd", "progress.md", "/users/", "private repository"):
         assert term not in flowed, f"{document} references private material: {term}"
 
 
