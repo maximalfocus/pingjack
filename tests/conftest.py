@@ -10,6 +10,7 @@ from collections.abc import Iterator
 import pytest
 from fastapi.testclient import TestClient
 
+from pingjack.apps.naive import create as create_naive
 from pingjack.apps.secure import run_secure_check
 from pingjack.apps.vulnerable import create as create_vulnerable
 from pingjack.gating import ACKNOWLEDGEMENT_ENV, ACKNOWLEDGEMENT_VALUE
@@ -45,4 +46,12 @@ def vulnerable_client() -> Iterator[TestClient]:
     with pytest.MonkeyPatch.context() as patch:
         patch.setenv(ACKNOWLEDGEMENT_ENV, ACKNOWLEDGEMENT_VALUE)
         with TestClient(create_vulnerable()) as client:
+            yield client
+
+
+@pytest.fixture
+def naive_client() -> Iterator[TestClient]:
+    with pytest.MonkeyPatch.context() as patch:
+        patch.setenv(ACKNOWLEDGEMENT_ENV, ACKNOWLEDGEMENT_VALUE)
+        with TestClient(create_naive()) as client:
             yield client

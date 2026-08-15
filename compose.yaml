@@ -34,6 +34,26 @@ services:
       - --port
       - "8001"
 
+  # Also intentionally vulnerable, and behind exactly the same two actions. It uses no shell, which
+  # is what makes it interesting: it is immune to the metacharacter payload and still discloses the
+  # same fixture through argument injection.
+  naive:
+    build: .
+    image: pingjack:dev
+    profiles: ["vulnerable"]
+    environment:
+      ALLOW_VULNERABLE_DEMO: ${ALLOW_VULNERABLE_DEMO:-}
+    ports:
+      - "127.0.0.1:8002:8002"
+    command:
+      - uvicorn
+      - pingjack.apps.naive:create
+      - --factory
+      - --host
+      - "0.0.0.0"
+      - --port
+      - "8002"
+
   # The verification boundary. `docker compose run --rm verify` is the one documented command, and
   # GitHub Actions runs exactly the same thing. Its profile keeps it out of `docker compose up`.
   verify:

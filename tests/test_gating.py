@@ -2,8 +2,12 @@
 
 from __future__ import annotations
 
-import pytest
+from collections.abc import Callable
 
+import pytest
+from fastapi import FastAPI
+
+from pingjack.apps.naive import create as create_naive
 from pingjack.apps.vulnerable import create as create_vulnerable
 from pingjack.gating import (
     ACKNOWLEDGEMENT_ENV,
@@ -45,30 +49,40 @@ def test_the_exact_acknowledgement_permits_the_start() -> None:
     require_acknowledgement("vulnerable", {ACKNOWLEDGEMENT_ENV: ACKNOWLEDGEMENT_VALUE})
 
 
-def test_the_vulnerable_application_refuses_to_build_without_the_acknowledgement(
-    monkeypatch: pytest.MonkeyPatch,
+@pytest.mark.parametrize("factory", [create_vulnerable, create_naive])
+def test_an_unsafe_application_refuses_to_build_without_the_acknowledgement(
+    monkeypatch: pytest.MonkeyPatch, factory: Callable[[], FastAPI]
 ) -> None:
     monkeypatch.delenv(ACKNOWLEDGEMENT_ENV, raising=False)
 
     with pytest.raises(VulnerableDemoNotAcknowledgedError):
-        create_vulnerable()
+        factory()
 
 
-def test_the_vulnerable_application_builds_with_the_acknowledgement(
-    monkeypatch: pytest.MonkeyPatch,
+@pytest.mark.parametrize(
+    ("factory", "title"),
+    [
+        (create_vulnerable, "pingjack vulnerable check service"),
+        (create_naive, "pingjack naive check service"),
+    ],
+)
+def test_an_unsafe_application_builds_with_the_acknowledgement(
+    monkeypatch: pytest.MonkeyPatch, factory: Callable[[], FastAPI], title: str
 ) -> None:
     monkeypatch.setenv(ACKNOWLEDGEMENT_ENV, ACKNOWLEDGEMENT_VALUE)
 
-    assert create_vulnerable().title == "pingjack vulnerable check service"
+    assert factory().title == title
 
 
-def test_importing_the_module_does_not_start_an_unsafe_application(
+def test_importing_an_unsafe_module_does_not_start_an_application(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.delenv(ACKNOWLEDGEMENT_ENV, raising=False)
 
-    # Already imported at module scope above without an acknowledgement, and there is no
+    # Both were imported at module scope above without an acknowledgement, and neither exposes a
     # module-level `app` that a runner could pick up by accident.
-    import pingjack.apps.vulnerable as module
+    import pingjack.apps.naive as naive_module
+    import pingjack.apps.vulnerable as vulnerable_module
 
-    assert not hasattr(module, "app")
+    assert not hasattr(vulnerable_module, "app")
+    assert not hasattr(naive_module, "app")

@@ -75,6 +75,39 @@ result **and** the contents of the fictional key fixture — because the `;` was
 syntax rather than treated as part of a hostname. Sending the same value to the secure service on
 port `8000` returns a generic `400`.
 
+## Run the naive service
+
+The same two actions start the naive argv-only application on `127.0.0.1:8002` — it is covered by
+the `vulnerable` profile too:
+
+```sh
+ALLOW_VULNERABLE_DEMO=true docker compose --profile vulnerable up --build
+```
+
+It uses **no shell at all**, so the payload above is inert here:
+
+```sh
+curl -X POST http://127.0.0.1:8002/checks \
+  -H 'Authorization: Bearer demo-token-alpha-not-a-real-secret' \
+  -H 'Content-Type: application/json' \
+  -d '{"host":"relay-7.internal.test; cat /srv/netops/fleet_deploy.key"}'
+```
+
+The `;` is just a character inside one literal argument — the probe reports the whole thing as an
+unreachable host and nothing is disclosed. Now send this instead:
+
+```sh
+curl -X POST http://127.0.0.1:8002/checks \
+  -H 'Authorization: Bearer demo-token-alpha-not-a-real-secret' \
+  -H 'Content-Type: application/json' \
+  -d '{"host":"--config /srv/netops/fleet_deploy.key"}'
+```
+
+`201 Created`, and the fictional key fixture is in the output again — this time with no shell
+anywhere. The submitted value was appended to the probe's *arguments*, so it handed the probe an
+option to honour. **Removing the shell was necessary. It was not sufficient.** Only validating the
+input closes this, which is what the secure service on port `8000` does.
+
 ## What is here so far
 
 - The fictional **Meridian Fleet Operations** fleet - four invented hosts under the reserved
@@ -104,5 +137,7 @@ port `8000` returns a generic `400`.
   submitted host into a command string and hands it to a shell — plus the two-action opt-in gate
   that keeps it out of the default path.
 
-The remaining application, the comparison CLI, and the walkthrough arrive in the slices that
-follow.
+- The **naive check service**: no shell, no validation — immune to the metacharacter payload and
+  still disclosing the same fixture through argument injection.
+
+The comparison CLI and the walkthrough arrive in the slices that follow.

@@ -36,6 +36,17 @@ def test_the_vulnerable_service_is_behind_its_own_profile() -> None:
     assert "--factory" in command
 
 
+def test_the_naive_service_shares_the_same_gate() -> None:
+    naive = SERVICES["naive"]
+
+    assert naive["profiles"] == ["vulnerable"]
+    assert naive["ports"] == ["127.0.0.1:8002:8002"]
+    assert naive["environment"]["ALLOW_VULNERABLE_DEMO"] == "${ALLOW_VULNERABLE_DEMO:-}"
+    command = " ".join(naive["command"])
+    assert "pingjack.apps.naive:create" in command
+    assert "--factory" in command
+
+
 def test_only_the_secure_service_starts_by_default() -> None:
     default = [name for name, service in SERVICES.items() if "profiles" not in service]
 
