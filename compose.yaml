@@ -1,11 +1,23 @@
 name: pingjack
 
 services:
+  # The secure application is the default service: `docker compose up` starts this and nothing
+  # else. Its port is published on the loopback interface only.
+  secure:
+    build: .
+    image: pingjack:dev
+    ports:
+      - "127.0.0.1:8000:8000"
+    # Binding 0.0.0.0 inside the container is what makes the loopback-only published port above
+    # reachable; the container's own network is not exposed anywhere else.
+    command: ["uvicorn", "pingjack.apps.secure:app", "--host", "0.0.0.0", "--port", "8000"]
+
   # The verification boundary. `docker compose run --rm verify` is the one documented command, and
-  # GitHub Actions runs exactly the same thing.
+  # GitHub Actions runs exactly the same thing. Its profile keeps it out of `docker compose up`.
   verify:
     build: .
     image: pingjack:dev
+    profiles: ["verify"]
     # No network at all. Any outbound access from the applications, the probe, or the tests fails
     # loudly instead of passing unnoticed.
     network_mode: none
