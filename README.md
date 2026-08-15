@@ -3,9 +3,22 @@
 An educational demonstration of **OS command injection** (`CWE-78`, `A03:2021 - Injection`), built
 around a fictional fleet link check API.
 
-> **Local educational material.** Everything here - the operators, the fleet, the tokens, and the
-> "sensitive" fixture - is invented. The demonstration runs only inside its own disposable
-> container, performs no network access, and is not intended to run anywhere else.
+Three services expose an identical API and differ in exactly one way: how each turns a submitted
+hostname into the command it asks the operating system to run. One hands the value to a shell, one
+removes the shell but still lets the value become arguments, and one validates before any process
+exists. Sending the same request to all three, side by side, is the lesson.
+
+> **Read this before running anything.**
+>
+> - This is **local educational material**, not a product. Everything in it — the operators, the
+>   fleet, the tokens, the "sensitive" fixture — is invented.
+> - Two of the three services are **intentionally vulnerable**. They execute what you submit. They
+>   are deliberately hard to start by accident, and they must never be deployed anywhere.
+> - Everything runs **locally, in disposable containers**, via Docker Compose. Published ports are
+>   bound to `127.0.0.1`, and no component makes any outbound network connection.
+> - There is **no hosted service** here, nothing to sign up for, and no image or package published
+>   anywhere. Nothing in this repository is production-safe or intended for production use, and
+>   none of it makes any such claim.
 
 ## Start here
 
@@ -146,7 +159,7 @@ anywhere. The submitted value was appended to the probe's *arguments*, so it han
 option to honour. **Removing the shell was necessary. It was not sufficient.** Only validating the
 input closes this, which is what the secure service on port `8000` does.
 
-## What is here so far
+## What is in here
 
 - The fictional **Meridian Fleet Operations** fleet - four invented hosts under the reserved
   `.test` domain - and its fictional operators.
@@ -181,3 +194,17 @@ input closes this, which is what the secure service on port `8000` does.
 - The **comparison CLI** (`pingjack-demo`), the one-shot disposable demo container, and the
   security regression matrix covering all three services.
 - The **walkthrough** in [WALKTHROUGH.md](WALKTHROUGH.md).
+
+## Contributing and security
+
+Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for how to run the gate and the
+safety rules a change must not break.
+
+Before reporting a security issue, read [SECURITY.md](SECURITY.md). The command-injection flaw in
+the vulnerable and naive services is the subject being taught, not a bug; a vulnerability that is
+*not* that one has a private reporting path.
+
+## Licence
+
+[MIT](LICENSE). Provided as-is, with no warranty and no support, compatibility, or
+production-readiness commitment of any kind.
