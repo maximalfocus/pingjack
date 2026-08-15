@@ -10,7 +10,8 @@ WORKDIR /workspace
 
 # Install from the project metadata first so that editing source or tests does not invalidate the
 # dependency layer.
-COPY pyproject.toml ./
+# README.md and LICENSE are referenced by the package metadata, so the build needs them here.
+COPY pyproject.toml README.md LICENSE ./
 COPY src ./src
 RUN uv pip install --system --no-cache -e ".[dev]"
 
