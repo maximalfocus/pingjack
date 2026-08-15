@@ -33,6 +33,23 @@ FIXTURE_MARKER = "FICTIONAL DEMO FIXTURE"
 
 NOTHING_CONSTRUCTED = "(nothing - refused before any process was created)"
 
+NO_PROBE_RAN = "(none - no process ran)"
+REPLY_AND_FIXTURE = "the link check reply, and the contents of the fictional key fixture"
+FIXTURE_ONLY = "the contents of the fictional key fixture"
+REPLY_ONLY = "the link check reply only"
+UNREACHABLE_ONLY = "an unreachable report only"
+
+
+def summarise_probe_output(output: str, *, disclosed: bool) -> str:
+    """Say in one line what the probe actually printed, so the reader need not read it."""
+    if not output:
+        return NO_PROBE_RAN
+    # Anchored to the start of a line: "no reply from" also contains "reply from".
+    replied = any(line.startswith("reply from") for line in output.splitlines())
+    if disclosed:
+        return REPLY_AND_FIXTURE if replied else FIXTURE_ONLY
+    return REPLY_ONLY if replied else UNREACHABLE_ONLY
+
 
 def constructed_invocation(application: str, host: str) -> str:
     """Render exactly what ``application`` builds for ``host``.
@@ -61,6 +78,8 @@ class Exchange:
     constructed: str
     output: str
     disclosed_fixture: bool
+    record_created: bool
+    probe_summary: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -144,7 +163,9 @@ def submit(client: httpx.Client, application: str, host: str, token: str) -> Exc
     """Submit one host to one application and record what came back."""
     response = client.post("/checks", json={"host": host}, headers=_headers(token))
     body = response.text
-    output = str(response.json().get("output", "")) if response.status_code == 201 else ""
+    created = response.status_code == 201
+    output = str(response.json().get("output", "")) if created else ""
+    disclosed = FIXTURE_MARKER in body
     return Exchange(
         application=application,
         submitted=host,
@@ -152,7 +173,9 @@ def submit(client: httpx.Client, application: str, host: str, token: str) -> Exc
         body=body,
         constructed=constructed_invocation(application, host),
         output=output,
-        disclosed_fixture=FIXTURE_MARKER in body,
+        disclosed_fixture=disclosed,
+        record_created=created,
+        probe_summary=summarise_probe_output(output, disclosed=disclosed),
     )
 
 

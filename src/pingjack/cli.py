@@ -62,15 +62,19 @@ def _print_result(result: ApplicationResult, stream: TextIO, *, verbose: bool) -
     stream.write(f"check history before: {result.records_before} record(s)\n")
 
     for exchange in result.exchanges:
-        stream.write(f"\n  submitted : {exchange.submitted}\n")
-        stream.write(f"  constructed: {exchange.constructed}\n")
-        stream.write(f"  response  : HTTP {exchange.status_code}\n")
-        stream.write(f"  fixture disclosed: {'YES' if exchange.disclosed_fixture else 'no'}\n")
+        stream.write(f"\n  submitted         : {exchange.submitted}\n")
+        stream.write(f"  server constructed: {exchange.constructed}\n")
+        stream.write(f"  response          : HTTP {exchange.status_code}\n")
+        stream.write(f"  probe output      : {exchange.probe_summary}\n")
+        stream.write(
+            f"  check record      : {'created' if exchange.record_created else 'none created'}\n"
+        )
+        stream.write(f"  fixture disclosed : {'YES' if exchange.disclosed_fixture else 'no'}\n")
         if verbose:
-            stream.write(f"  body      : {exchange.body}\n")
+            stream.write(f"  response body     : {exchange.body}\n")
             if exchange.output:
                 indented = "\n".join(f"      {line}" for line in exchange.output.splitlines())
-                stream.write(f"  probe output:\n{indented}\n")
+                stream.write(f"  probe output in full:\n{indented}\n")
 
     stream.write(f"\ncheck history after : {result.records_after} record(s)\n")
     if result.application == SECURE:

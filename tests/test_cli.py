@@ -24,6 +24,8 @@ def _exchange(application: str, *, disclosed: bool, status: int = 201) -> Exchan
         constructed="fleetprobe --count 1 relay-7.internal.test",
         output="fleetprobe 1.0\nreply\n",
         disclosed_fixture=disclosed,
+        record_created=status == 201,
+        probe_summary="the link check reply only",
     )
 
 
@@ -82,7 +84,9 @@ def test_default_output_omits_the_http_exchange() -> None:
 
     render(_report(), stream, verbose=False)
 
-    assert "body      :" not in stream.getvalue()
+    written = stream.getvalue()
+    assert "response body" not in written
+    assert "probe output in full" not in written
 
 
 def test_verbose_output_adds_the_exchange_and_the_probe_output() -> None:
@@ -91,8 +95,8 @@ def test_verbose_output_adds_the_exchange_and_the_probe_output() -> None:
     render(_report(), stream, verbose=True)
 
     written = stream.getvalue()
-    assert "body      :" in written
-    assert "probe output:" in written
+    assert "response body     :" in written
+    assert "probe output in full:" in written
 
 
 def test_every_rendering_shows_what_the_service_constructed() -> None:
