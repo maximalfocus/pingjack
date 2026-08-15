@@ -24,14 +24,18 @@ from pingjack.hostname import is_valid_hostname
 from pingjack.service import create_app
 
 
+def build_argv(host: str) -> tuple[str, ...]:
+    """Build the invocation: a fixed argument count, no --config, one positional host."""
+    return (probe_executable(), "--count", str(PROBE_COUNT), host)
+
+
 def run_secure_check(host: str) -> CheckOutcome:
     """Validate ``host``, then check it - or refuse before creating any process."""
     if not is_valid_hostname(host):
         return RejectedCheck(rejection_class=RejectionClass.HOSTNAME_SYNTAX)
     if not is_fleet_host(host):
         return RejectedCheck(rejection_class=RejectionClass.FLEET_MEMBERSHIP)
-    # A fixed argument count, no --config, and the host as a single positional argument.
-    return run_argv((probe_executable(), "--count", str(PROBE_COUNT), host))
+    return run_argv(build_argv(host))
 
 
 app = create_app(
