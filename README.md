@@ -48,6 +48,33 @@ any process is created. Anything else gets the same generic `400` regardless of 
 it; the reason exists only in the structured JSON event the server writes to its own log
 (`docker compose logs secure`).
 
+## Run the vulnerable service
+
+> **The vulnerable application is deliberately broken.** It executes whatever you submit. It is
+> local educational code, it runs only inside this container against invented fixtures, and it must
+> never be deployed anywhere.
+
+Starting it takes **two** deliberate actions — enabling the profile *and* acknowledging what it is:
+
+```sh
+ALLOW_VULNERABLE_DEMO=true docker compose --profile vulnerable up --build
+```
+
+With either action missing it refuses to start and says which one is absent. It listens on
+`127.0.0.1:8001`.
+
+```sh
+curl -X POST http://127.0.0.1:8001/checks \
+  -H 'Authorization: Bearer demo-token-alpha-not-a-real-secret' \
+  -H 'Content-Type: application/json' \
+  -d '{"host":"relay-7.internal.test; cat /srv/netops/fleet_deploy.key"}'
+```
+
+That returns an ordinary-looking `201 Created` whose probe output contains both the link-check
+result **and** the contents of the fictional key fixture — because the `;` was parsed as shell
+syntax rather than treated as part of a hostname. Sending the same value to the secure service on
+port `8000` returns a generic `400`.
+
 ## What is here so far
 
 - The fictional **Meridian Fleet Operations** fleet - four invented hosts under the reserved
@@ -73,5 +100,9 @@ it; the reason exists only in the structured JSON event the server writes to its
   allowlist, argument-vector probe invocation, the append-only check lifecycle, per-operator check
   history, and the structured rejection audit event.
 
-The remaining applications, the comparison CLI, and the walkthrough arrive in the slices that
+- The **vulnerable check service**: identical in every respect except that it interpolates the
+  submitted host into a command string and hands it to a shell — plus the two-action opt-in gate
+  that keeps it out of the default path.
+
+The remaining application, the comparison CLI, and the walkthrough arrive in the slices that
 follow.
