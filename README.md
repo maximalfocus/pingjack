@@ -12,6 +12,35 @@ around a fictional fleet link check API.
 Docker Compose. Nothing else: Python, the project dependencies, `uv`, pytest, Ruff, and mypy all
 run inside the container.
 
+## See the whole thing in one command
+
+```sh
+ALLOW_VULNERABLE_DEMO=true docker compose --profile demo run --rm demo
+```
+
+That starts all three services inside one disposable container against fresh temporary databases,
+drives them over real localhost HTTP, prints a verdict for each, and cleans up after itself. It
+takes a couple of seconds. Add `--verbose` for the HTTP exchange and the probe output:
+
+```sh
+ALLOW_VULNERABLE_DEMO=true docker compose --profile demo run --rm demo pingjack-demo --verbose
+```
+
+Or drive it yourself with `pingjack-demo --interactive`, which asks which service to use and which
+payload to send.
+
+The run ends like this:
+
+```
+  vulnerable  VULNERABLE - a shell parsed the submitted value, and the injected command ran
+  naive       STILL VULNERABLE - no shell was involved, and the fixture leaked anyway
+  secure      SECURE - both payloads refused before any process existed, history untouched
+```
+
+The demo carries the same two-action gate as the services it starts, so it is not a way around
+them. Its container has no network at all — only a loopback interface — so every request it makes
+provably stays inside it.
+
 ## Verify
 
 ```sh
@@ -140,4 +169,7 @@ input closes this, which is what the secure service on port `8000` does.
 - The **naive check service**: no shell, no validation — immune to the metacharacter payload and
   still disclosing the same fixture through argument injection.
 
-The comparison CLI and the walkthrough arrive in the slices that follow.
+- The **comparison CLI** (`pingjack-demo`), the one-shot disposable demo container, and the
+  security regression matrix covering all three services.
+
+The educational walkthrough arrives in the slice that follows.

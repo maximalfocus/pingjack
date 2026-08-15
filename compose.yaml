@@ -54,6 +54,22 @@ services:
       - --port
       - "8002"
 
+  # The one-shot comparison. Disposable: it starts all three applications inside itself against
+  # fresh temporary databases, drives them over real localhost HTTP, prints the verdicts, and exits.
+  # It carries the same two-action gate as the applications it starts, so it is not a way around
+  # them. `network_mode: none` still leaves a loopback interface, so the demo does real HTTP while
+  # provably reaching nothing outside the container.
+  #
+  #   ALLOW_VULNERABLE_DEMO=true docker compose --profile demo run --rm demo
+  demo:
+    build: .
+    image: pingjack:dev
+    profiles: ["demo"]
+    network_mode: none
+    environment:
+      ALLOW_VULNERABLE_DEMO: ${ALLOW_VULNERABLE_DEMO:-}
+    command: ["pingjack-demo"]
+
   # The verification boundary. `docker compose run --rm verify` is the one documented command, and
   # GitHub Actions runs exactly the same thing. Its profile keeps it out of `docker compose up`.
   verify:

@@ -45,6 +45,23 @@ def test_the_refusal_explains_both_required_actions() -> None:
     assert "two deliberate actions" in message
 
 
+@pytest.mark.parametrize(
+    ("application", "expected"),
+    [
+        ("vulnerable", "docker compose --profile vulnerable up"),
+        ("naive", "docker compose --profile vulnerable up"),
+        ("demo", "docker compose --profile demo run --rm demo"),
+    ],
+)
+def test_the_refusal_names_the_command_that_actually_starts_it(
+    application: str, expected: str
+) -> None:
+    with pytest.raises(VulnerableDemoNotAcknowledgedError) as raised:
+        require_acknowledgement(application, {})
+
+    assert expected in str(raised.value)
+
+
 def test_the_exact_acknowledgement_permits_the_start() -> None:
     require_acknowledgement("vulnerable", {ACKNOWLEDGEMENT_ENV: ACKNOWLEDGEMENT_VALUE})
 

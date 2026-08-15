@@ -15,6 +15,14 @@ ACKNOWLEDGEMENT_ENV = "ALLOW_VULNERABLE_DEMO"
 ACKNOWLEDGEMENT_VALUE = "true"
 COMPOSE_PROFILE = "vulnerable"
 
+#: The Compose profile each unsafe entry point sits behind, and the command that starts it. The
+#: refusal quotes these so the reader is told the actual way in, not a generic one.
+START_COMMANDS = {
+    "vulnerable": ("vulnerable", "docker compose --profile vulnerable up"),
+    "naive": ("vulnerable", "docker compose --profile vulnerable up"),
+    "demo": ("demo", "docker compose --profile demo run --rm demo"),
+}
+
 
 class VulnerableDemoNotAcknowledgedError(RuntimeError):
     """Raised instead of starting an intentionally unsafe application."""
@@ -29,13 +37,15 @@ def require_acknowledgement(application: str, environ: Mapping[str, str] | None 
     supplied = values.get(ACKNOWLEDGEMENT_ENV, "")
     if supplied == ACKNOWLEDGEMENT_VALUE:
         return
+    profile, command = START_COMMANDS.get(
+        application, (COMPOSE_PROFILE, f"docker compose --profile {COMPOSE_PROFILE} up")
+    )
     raise VulnerableDemoNotAcknowledgedError(
         f"Refusing to start the {application!r} application: it is intentionally vulnerable and is "
         f"local educational code only.\n"
         f"{ACKNOWLEDGEMENT_ENV} is {supplied!r}, but must be {ACKNOWLEDGEMENT_VALUE!r}.\n"
         f"Starting it takes two deliberate actions:\n"
-        f"  1. enable the {COMPOSE_PROFILE!r} Compose profile, and\n"
+        f"  1. enable the {profile!r} Compose profile, and\n"
         f"  2. set {ACKNOWLEDGEMENT_ENV}={ACKNOWLEDGEMENT_VALUE}.\n"
-        f"For example: {ACKNOWLEDGEMENT_ENV}={ACKNOWLEDGEMENT_VALUE} "
-        f"docker compose --profile {COMPOSE_PROFILE} up"
+        f"For example: {ACKNOWLEDGEMENT_ENV}={ACKNOWLEDGEMENT_VALUE} {command}"
     )
